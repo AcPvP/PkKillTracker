@@ -1,7 +1,13 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.WebHost.UseUrls("http://localhost:5000/");
+builder.WebHost.UseStartup<IStartup>();
 
 var app = builder.Build();
 
