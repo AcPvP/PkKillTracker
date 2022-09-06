@@ -1,0 +1,64 @@
+﻿@using PkKillTracker.Models
+@{
+    ViewData["Title"] = "PK Kills by Clan";
+}
+@section css {
+    <link href="https://cdn.jsdelivr.net/npm/luxon@3.0.3/build/global/luxon.min.js" rel="stylesheet">
+    <link href="https://unpkg.com/tabulator-tables@5.3.3/dist/css/tabulator.min.css" rel="stylesheet">
+}
+    <div class="text-center">
+        <div id="titleRow">
+            <h1 id="pageTitle">@ViewData["Title"]</h1>            
+        </div>
+        <div id="gridWrapper"></div>
+    </div>
+
+@section scripts {
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.3.3/dist/js/tabulator.min.js"></script>
+    <script>
+        @*var tabledata = [
+        @{
+            var gridData = (List<Clan>)ViewBag.KillsData;
+            for (int i = 0; i < gridData.Count(); i++)
+            {
+                Clan clan = gridData[i];
+                string rowString = String.Format("player: \"{0}\", kills: '{1}', deaths: '{2}', ratio: '{3}'",
+                clan.ClanName,
+                clan.Kills,
+                clan.Deaths,
+                clan.Ratio);
+                rowString = "{" + rowString + "},";
+                @Html.Raw(rowString);
+            }
+        }
+        ];*@
+
+    var table = new Tabulator("#gridWrapper", {
+        layout: "fitColumns",
+        movableColumns: true,
+        columns: [
+            { title: "Clan", field: "ClanName", headerFilter: "input", sorter: "string" },
+            { title: "Kills", field: "Kills", headerFilter: "input", sorter: "number" },
+            { title: "Deaths", field: "Deaths", headerFilter: "input", sorter: "number" },
+            { title: "Ratio", field: "Ratio", headerFilter: "input", sorter: "number" }
+        ],
+    });
+
+    $(function () {
+        AjaxLoadGrid();
+    });
+
+    function AjaxLoadGrid(filterType, filter) {
+
+        var actionUrl = '@Url.Action("FetchKillsByCharGridData","PkKills")';
+        $.ajax({
+            method: "POST",
+            url: actionUrl,
+            contentType: 'application/json',
+            success: function (result) {
+                table.setData(result);
+            }
+        });
+    }    
+</script>
+}

@@ -1,0 +1,164 @@
+﻿@using PkKillTracker.Models
+@{
+    DateTime currentMonthFilter = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    bool filterByPlayer = false;
+    if (ViewBag.FilterString != null && !String.IsNullOrEmpty((string)ViewBag.FilterString))
+    {
+        ViewData["Title"] = "PK Kills for " + (string)ViewBag.FilterString;
+        if(!DateTime.TryParse((string)ViewBag.FilterString, out currentMonthFilter))
+        {
+            filterByPlayer = true;
+        }
+    }
+    else
+    {
+        ViewData["Title"] = "All PK Kills";
+    }
+}
+@section css {
+    <link href="https://cdn.jsdelivr.net/npm/luxon@3.0.3/build/global/luxon.min.js" rel="stylesheet">
+    <link href="https://unpkg.com/tabulator-tables@5.3.3/dist/css/tabulator.min.css" rel="stylesheet">    
+}
+<div class="text-center">
+    <div id="titleRow">
+        <span id="pageTitle">@ViewData["Title"]</span>
+        <button id="btnNextMonth" type="button" class="btn-danger" onclick="NextMonth()">Next Month</button>
+        <button id="btnPrevMonth"type="button" class="btn-danger" onclick="PrevMonth()">Prev Month</button>
+        <input id="txtSearchPlayer"type="text" placeholder="Search Kills By Character Name" />
+        <button id="btnSearchPlayer"type="button" class="btn-danger" onclick="SearchByPlayer()">Search</button>
+    </div>
+    <div id="gridWrapper"></div>
+</div>
+
+@section scripts {
+<script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.3.3/dist/js/tabulator.min.js"></script>
+<script type="text/javascript">
+        @*var tabledata = [
+        @{
+            var gridData = (List<PkKill>)ViewBag.KillsData;
+            for (int i = 0; i < gridData.Count(); i++)
+            {
+                PkKill kill = gridData[i];
+                string rowString = String.Format("killer: \"{0}\", killerClan: \"{1}\", victim: \"{2}\", victimClan: \"{3}\", killDateTime: '{4}'",
+                kill.KillerName,
+                kill.KillerMonarchName,
+                kill.VictimName,
+                kill.VictimMonarchName,
+                kill.KillDateTime?.ToString("MM-dd-yyyy hh:mm tt") ?? "");
+                rowString = "{" + rowString + "},";
+                            @Html.Raw(rowString)
+            ;
+        }
+    }        
+    ];*@
+
+    var table = new Tabulator("#gridWrapper", {
+        //data: tabledata,
+        layout: "fitColumns",
+        movableColumns: true,
+        pagination: true,
+        paginationSize: 15,
+        columns: [
+            { title: "Killer", field: "KillerName", headerFilter: "input", sorter: "string" },
+            { title: "Killer Clan", field: "KillerMonarchName", headerFilter: "input", sorter: "string" },
+            { title: "Victim", field: "VictimName", headerFilter: "input", sorter: "string" },
+            { title: "Victim Clan", field: "VictimMonarchName", headerFilter: "input", sorter: "string" },
+            {
+                title: "Kill DateTime", field: "KillDateTime", width: 180, hozAlign: "center", headerFilter: "input", sorter:
+                    function (a, b) {
+                        var dateA = Date.parse(a);
+                        var dateB = Date.parse(b);
+
+                        if (dateA > dateB) {
+                            return 1;
+                        } else if (dateB > dateA) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
+                    }
+            }
+        ],
+    });
+
+    $(function () {
+        AjaxLoadGrid();
+    });    
+
+    function AjaxLoadGrid(filterType, filter) {
+
+        var actionUrl = '@Url.Action("FetchPkKillsGridData","PkKills")';
+        if(filterType)
+        {
+            if(filterType == 'month')
+            {
+                actionUrl = actionUrl + '?monthDateFilter=' + filter;
+            }
+            else if (filterType == 'player')
+            {
+                actionUrl = actionUrl + '?playerFilter=' + filter;
+            }
+        }
+
+        $.ajax({
+            method: "POST",
+            url: actionUrl,
+            contentType: 'application/json',
+            success: function (result) {
+                table.setData(result);
+            }
+        });
+    }
+    
+    var currMonth = @currentMonthFilter.Month;
+    var currYear = @currentMonthFilter.Year;
+    function NextMonth() {
+
+        if(currMonth == 12)
+        {
+            currMonth = 1;
+            currYear = currYear + 1;
+        }
+        else
+        {
+            currMonth = currMonth + 1;
+        }
+        
+        AjaxLoadGrid('month', "".concat(currYear, "-", currMonth, "-01"));
+
+        var monthDate = new Date(currYear, currMonth-1, 1);
+        var monthString = monthDate.toLocaleString('default', { month: 'long' });
+        $("#pageTitle").text("PK Kills for ".concat(monthString, ' ', String(currYear)));
+    }
+
+    function PrevMonth() {
+        if(currMonth == 1)
+        {
+            currMonth = 12;
+            currYear = currYear - 1;
+        }
+        else
+        {
+            currMonth = currMonth - 1;
+        }                
+
+        AjaxLoadGrid('month', "".concat(currYear, "-", currMonth, "-01"));
+
+        var monthDate = new Date(currYear, currMonth-1, 1);
+        var monthString = monthDate.toLocaleString('default', { month: 'long' });
+        $("#pageTitle").text("PK Kills for ".concat(monthString, ' ', String(currYear)));
+    }
+
+    function SearchByPlayer() {
+        var playerFilterString = $("#txtSearchPlayer").val();
+        if ((playerFilterString == "") || (playerFilterString == null)) {
+            alert('Enter a search string to search by player name');
+            return;
+        }
+        else {
+            AjaxLoadGrid('player',playerFilterString);
+            $("#pageTitle").text("PK Kills and Deaths for " + playerFilterString);
+        }
+    }
+</script>
+}
