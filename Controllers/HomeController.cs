@@ -6,7 +6,8 @@ namespace PkKillTracker.Controllers
     {
         public IActionResult Index()
         {
-            return RedirectToAction("AllKills", "PkKills");
+            return Json(new { msg = "Hello from PkKillTracker" });
+            //return RedirectToAction("AllKills", "PkKills");
         }
     }
 }
