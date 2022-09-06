@@ -7,7 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.WebHost.UseUrls("http://localhost:5000/");
-builder.WebHost.UseStartup<IStartup>();
 
 var app = builder.Build();
 
