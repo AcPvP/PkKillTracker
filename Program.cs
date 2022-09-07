@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.KnownProxies.Add(IPAddress.Parse("135.148.121.170"));
+    options.KnownProxies.Add(IPAddress.Parse("147.135.30.224"));
 });
 
 // Add services to the container.
