@@ -28,13 +28,13 @@ namespace PkKillTracker.Controllers
 
         public IActionResult AllKills(string playerFilter = "", DateTime? monthDateFilter = null)
         {
-            ViewBag.KillsData = FetchPkKillsData(playerFilter, monthDateFilter);
+            ViewBag.FilterString = string.IsNullOrEmpty(playerFilter) ? monthDateFilter?.ToString("MMMM yyyy") ?? DateTime.Today.ToString("MMMM yyyy") : playerFilter;
             return View();
         }
 
         public List<PkKill> FetchPkKillsData(string playerFilter = "", DateTime? monthDateFilter = null)
         {
-            var monthDateFilterString = monthDateFilter?.ToString("MMMM yyyy") ?? "";
+            var monthDateFilterString = monthDateFilter?.ToString("MMMM yyyy") ?? DateTime.Today.ToString("MMMM yyyy");
 
             bool fetchData = false;
 
@@ -100,8 +100,7 @@ namespace PkKillTracker.Controllers
                 else if (CachedPkKills.Count == 0)
                 {
                     pkKills = PkKillsDataAccess.GetPkKillsByMonth(DateTime.Today);
-                    CachedPkKills[DateTime.Today.ToString("MMMM yyyy")] = pkKills;
-                    ViewBag.FilterString = DateTime.Today.ToString("MMMM yyyy");
+                    CachedPkKills[DateTime.Today.ToString("MMMM yyyy")] = pkKills;                    
                     LastUpdatedPkKills = DateTime.Now;
                 }
             }
