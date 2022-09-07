@@ -8,12 +8,19 @@ using System.Data.Common;
 using MySql.Data;
 using MySql.Data.MySqlClient;
 using System.Configuration;
+using Microsoft.Extensions.Configuration;
 
 namespace PkKillTracker.DataAccess
-{
+{    
     public static class PkKillsDataAccess
     {
-        private static string connString = "server=127.0.0.1;user=root;database=aceclassic_event_log;port=3306;password=Rub1Out4Me";
+        private static IConfigurationRoot _config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json").Build();
+
+        private static string connString = _config["ACEDB"];
+        private static string eventLogDbName = _config["ACEDB_event_log_db_name"];
+        private static string shardDbName = _config["ACEDB_shard_db_name"];
 
         public static List<PkKill> GetPkKillsByMonth(DateTime monthDateFilter)
         {
@@ -36,7 +43,7 @@ namespace PkKillTracker.DataAccess
             try
             {
                 conn.Open();
-                string sql = @"SELECT
+                string sql = $@"SELECT
                                   kill.id,
                                   killerChar.name AS Killer,
                                   COALESCE(killerMonarch.name, 'No Clan') AS KillerClan,
@@ -46,14 +53,14 @@ namespace PkKillTracker.DataAccess
                                     WHEN DATE(kill.kill_datetime) = '0001-01-01' THEN 'Not Recorded'
                                     ELSE kill.kill_datetime
                                   END AS KillDateTime
-                                FROM aceclassic_event_log.pk_kills_log AS `kill`
-                                JOIN aceclassic_shard.character AS killerChar
+                                FROM {eventLogDbName}.pk_kills_log AS `kill`
+                                JOIN {shardDbName}.character AS killerChar
                                 ON kill.killer_id = killerChar.id
-                                JOIN aceclassic_shard.character AS victimChar
+                                JOIN {shardDbName}.character AS victimChar
                                 ON kill.victim_id = victimChar.id
-                                LEFT JOIN aceclassic_shard.character AS killerMonarch
+                                LEFT JOIN {shardDbName}.character AS killerMonarch
                                 ON kill.killer_monarch_id = killerMonarch.id
-                                LEFT JOIN aceclassic_shard.character AS victimMonarch
+                                LEFT JOIN {shardDbName}.character AS victimMonarch
                                 ON kill.victim_monarch_id = victimMonarch.id" + Environment.NewLine +
                                 (!string.IsNullOrWhiteSpace(playerFilter) ?
                               @"WHERE killerChar.name = @playerFilter
@@ -103,19 +110,19 @@ namespace PkKillTracker.DataAccess
             try
             {
                 conn.Open();
-                string sql = @"SELECT
+                string sql = $@"SELECT
                                   player.name AS Player,
                                   monarchChar.name AS Clan,
                                   SUM(CASE WHEN kill.killer_id = player.id THEN 1 ELSE 0 END) AS TotalKills,
                                   SUM(CASE WHEN kill.victim_id = player.id THEN 1 ELSE 0 END) AS TotalDeaths
-                                FROM aceclassic_shard.character AS player
-                                LEFT JOIN aceclassic_event_log.pk_kills_log AS `kill`
+                                FROM {shardDbName}.character AS player
+                                LEFT JOIN {eventLogDbName}.pk_kills_log AS `kill`
                                 ON kill.killer_id = player.id
                                 OR kill.victim_id = player.id
-                                LEFT JOIN aceclassic_shard.biota_properties_i_i_d monarchId
+                                LEFT JOIN {shardDbName}.biota_properties_i_i_d monarchId
                                 ON player.id = monarchId.object_Id
                                 AND monarchId.type = 26
-                                LEFT JOIN aceclassic_shard.character AS monarchChar
+                                LEFT JOIN {shardDbName}.character AS monarchChar
                                 ON monarchId.value = monarchChar.Id
                                 GROUP BY player.name, monarchChar.name
                                 HAVING SUM(CASE WHEN kill.killer_id = player.id THEN 1 ELSE 0 END) > 10 
@@ -152,12 +159,12 @@ namespace PkKillTracker.DataAccess
             try
             {
                 conn.Open();
-                string sql = @"SELECT
+                string sql = $@"SELECT
                                   player.name AS ClanName,
                                   SUM(CASE WHEN kill.killer_monarch_id = player.id THEN 1 ELSE 0 END) AS TotalKills,
                                   SUM(CASE WHEN kill.victim_monarch_id = player.id THEN 1 ELSE 0 END) AS TotalDeaths
-                                FROM aceclassic_shard.character AS player
-                                JOIN aceclassic_event_log.pk_kills_log AS `kill`
+                                FROM {shardDbName}.character AS player
+                                JOIN {eventLogDbName}.pk_kills_log AS `kill`
                                 ON kill.killer_monarch_id = player.id
                                 OR kill.victim_monarch_id = player.id
                                 GROUP BY player.name

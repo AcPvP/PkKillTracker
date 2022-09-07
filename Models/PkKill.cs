@@ -24,5 +24,7 @@ namespace PkKillTracker.Models
 
         public DateTime? KillDateTime { get; set; }
 
+        public string KillDateTimeString { get { return KillDateTime.HasValue ? KillDateTime.Value.ToString("yyyy-MM-dd hh:mm tt") : ""; } }
+
     }
 }

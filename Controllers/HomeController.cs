@@ -4,10 +4,16 @@ namespace PkKillTracker.Controllers
 {
     public class HomeController : Controller
     {
-        public IActionResult Index()
+        public IActionResult Index(bool isHello)
         {
-            return Json(new { msg = "Hello from PkKillTracker" });
-            //return RedirectToAction("AllKills", "PkKills");
+            if (isHello)
+            {
+                return Json(new { msg = "Hello from PkKillTracker" });
+            }
+            else
+            {
+                return RedirectToAction("AllKills", "PkKills");
+            }
         }
     }
 }
