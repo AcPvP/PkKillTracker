@@ -97,7 +97,7 @@ namespace PkKillTracker.Controllers
                     CachedPkKills[monthDateFilterString] = pkKills;
                     LastUpdatedPkKills = DateTime.Now;
                 }
-                else if (CachedPkKills.Count == 0)
+                else
                 {
                     pkKills = PkKillsDataAccess.GetPkKillsByMonth(DateTime.Today);
                     CachedPkKills[DateTime.Today.ToString("MMMM yyyy")] = pkKills;                    
